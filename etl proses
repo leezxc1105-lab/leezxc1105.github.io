@@ -1,0 +1,74 @@
+import requests
+import json
+import pandas as pd
+import os
+
+# 단계 1: 데이터 수집 및 저장
+def load_data_from_api():
+
+    url = "https://ll.thespacedevs.com/2.0.0/launch/upcoming"
+    save_folder = "data_storage"
+    file_path = f"{save_folder}/launches.json"
+    
+    # 폴더 생성
+    os.makedirs(save_folder, exist_ok=True)
+    
+    # API 호출
+    response = requests.get(url)
+    data = response.json()
+    
+    # JSON 파일 저장
+    with open(file_path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=4)
+        
+    # Pandas DataFrame으로 변환 및 구조 확인
+    df = pd.DataFrame(data['results'])
+    print("--- 데이터 구조 확인 ---")
+    print(df.head())
+    
+    return df
+
+# 단계 2: 이미지 다운로드
+def get_pictures():
+    img_folder = "downloaded_images"
+    os.makedirs(img_folder, exist_ok=True)
+    
+    # JSON 파일 다시 읽기
+    with open("data_storage/launches.json", "r", encoding="utf-8") as f:
+        data = json.load(f)
+    
+    launches = data.get('results', [])
+    
+    for i, launch in enumerate(launches):
+        img_url = launch.get('image')
+        
+        
+        # 이미지 URL이 있는지 확인 (예외 처리 1)
+        if not img_url:
+            print(f"{i}번 항목: 이미지 URL이 없습니다.")
+            continue
+            
+        try:
+            # 이미지 다운로드 (예외 처리 2: 네트워크 및 URL 유효성)
+            response = requests.get(img_url, timeout=10)
+            response.raise_for_status() # 200 OK가 아니면 에러 발생
+            
+            # 파일 저장 (확장자 추출 등 간단히 처리)
+            file_name = f"{img_folder}/launch_{i}.jpg"
+            with open(file_name, "wb") as f:
+                f.write(response.content)
+            print(f"저장 완료: {file_name}")
+            
+        except requests.exceptions.RequestException as e:
+            print(f"다운로드 실패 ({img_url}): {e}")
+            from IPython.display import Image, display
+
+# ... (기존 get_pictures 함수 내부)
+            # 이미지 저장 후 바로 보여주기
+            display(Image(filename=file_name)) 
+            print(f"방금 저장된 이미지: {file_name}")
+
+# 실행
+if __name__ == "__main__":
+    load_data_from_api()
+    get_pictures()
