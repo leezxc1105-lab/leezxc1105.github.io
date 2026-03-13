@@ -80,3 +80,4 @@ if __name__ == "__main__":
     if launch_data:
         get_pictures(launch_data)
     print("\n모든 작업이 완료되었습니다!")
+
