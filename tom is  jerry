@@ -1,0 +1,22 @@
+class Chaser:
+  def __init__(self, name, role):
+    self.name = name
+    self.role = role
+    self.distance = 0         
+    self.status = "대기 중"
+
+  def following_mode(self, target_name):
+        # 상태 변경: 추격 모드로 전환
+        self.status = f"{target_name}를 추격 중"
+        
+        print(f"[{self.name}]이(가) {target_name}를 쫓아가기 갑니다! (모드: {self.status})")
+        
+        # 10번 반복하며 거리(Attribute)를 변화시킴
+        for i in range(1, 11):
+            self.distance += 10  # 한 번 쫓을 때마다 10m씩 전진
+            print(f"{i}번째 추격! 현재 이동 거리: {self.distance}m")
+tom = Chaser("Tom", "Chaser")
+
+tom.following_mode("Jerry")
+
+print(f"\n결과: {tom.name}은 총 {tom.distance}m를 이동했습니다.")
