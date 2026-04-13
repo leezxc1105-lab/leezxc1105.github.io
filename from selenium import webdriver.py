@@ -1,0 +1,71 @@
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.common.by import By
+import time
+
+options = Options()
+options.add_argument("--headless") 
+options.add_argument("--window-size=1920,1080")
+options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+
+try:
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    url = "https://comic.naver.com/webtoon"
+    driver.get(url)
+    
+    print("페이지 접속 중... 데이터 로딩을 위해 5초 대기합니다.")
+    time.sleep(5) 
+
+    print("\n" + "="*50)
+    print("         이달의 신규 웹툰 스크래핑 결과")
+    print("="*50 + "\n")
+
+    # [수정된 핵심 부분]
+    # '신작'이라는 배지(태그)가 붙어있는 모든 부모 요소를 찾습니다.
+    # '신작' 텍스트를 가진 요소를 먼저 찾고 그 주변 데이터를 가져오는 방식입니다.
+    items = driver.find_elements(By.XPATH, "//li[descendant::span[text()='신작']]")
+
+    if not items:
+        # 만약 XPath로 못 찾을 경우, 신작 섹션 전체 리스트를 다시 시도
+        items = driver.find_elements(By.CSS_SELECTOR, "li[class*='ContentFiller__item']")
+
+    count = 0
+    for item in items:
+        try:
+            # item.text를 찍어보면 [제목, 작가, 설명] 순으로 줄바꿈되어 나옵니다.
+            text_data = item.text.strip().split('\n')
+            
+            # '신작'이라는 글자가 포함되어 있으므로 보통 [신작, 제목, 작가, 설명] 순서입니다.
+            if len(text_data) >= 3:
+                # '신작' 글자를 제외하고 슬라이싱
+                if text_data[0] == '신작':
+                    title = text_data[1]
+                    author = text_data[2]
+                    desc = text_data[3] if len(text_data) > 3 else "설명 없음"
+                else:
+                    title = text_data[0]
+                    author = text_data[1]
+                    desc = text_data[2] if len(text_data) > 2 else "설명 없음"
+
+                print(f"[{count+1}]")
+                print(f"▶ 제목: {title}")
+                print(f"▶ 작가: {author}")
+                print(f"▶ 내용: {desc}")
+                print("-" * 40)
+                count += 1
+        except:
+            continue
+
+    if count == 0:
+        print("데이터 추출에 실패했습니다. 네이버의 구조가 변경되었을 수 있습니다.")
+    else:
+        print(f"\n총 {count}개의 신규 웹툰을 찾았습니다.")
+
+except Exception as e:
+    print(f"에러 발생: {e}")
+
+finally:
+    driver.quit()
+    print("\n모든 작업이 완료되었습니다.")
